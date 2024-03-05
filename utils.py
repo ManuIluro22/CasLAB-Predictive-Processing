@@ -2,55 +2,28 @@ import pandas as pd
 import numpy as np
 from scipy.cluster.hierarchy import fcluster
 
-def create_cluster_df(linkage,n_clusters,df):
-    clusters_happy_match = fcluster(linkage, n_clusters, criterion='maxclust')
-    df.reset_index(inplace=True)
-    df.loc[:, "clusters"] = clusters_happy_match
-    new_df = df[["Subject ID", "clusters"]].copy()
-    return new_df
+from docx import Document
+from docx.shared import Inches
+import matplotlib.pyplot as plt
+import seaborn as sns
+import predictive_plots
 
-def create_metrics_cluster_df(df_cluster, df_scales):
-    new_data = pd.merge(df_cluster, df_scales, left_on='Subject ID', right_on='EPRIME_CODE')
-
-    filter_df = filter_data(new_data)
-
-    data_clust = {}
-    for clust in np.unique(filter_df["clusters"]):
-        metric_data = {}
-        for column in filter_df.drop(["EPRIME_CODE", "clusters"], axis=1).columns:
-            mean_col = filter_df[filter_df["clusters"] == clust][column].mean()
-            std_col = filter_df[filter_df["clusters"] == clust][column].std()
-            max_col = filter_df[filter_df["clusters"] == clust][column].max()
-            min_col = filter_df[filter_df["clusters"] == clust][column].min()
-
-            # Normality Test
-            # _, p_value_col = stats.shapiro(result_df[result_df["clusters"]==clust][column])
-            metric_data[column] = {'mean': round(mean_col, 2), 'std': round(std_col, 2),
-                                   'max': max_col, 'min': min_col}
-
-        data_clust[clust] = metric_data
-
-    df_clusters = pd.DataFrame()
-    for cluster, attributes in data_clust.items():
-        for attribute, values in attributes.items():
-            for stat, value in values.items():
-                col_name = f"{attribute}_{stat}"
-                df_clusters.loc[cluster, col_name] = value
-
-    return df_clusters
-
-
-
-def filter_data(df,data_type = np.number,na_number = 20):
+def filter_data(df,data_type = np.number,na_number = 50):
     numeric_columns = df.select_dtypes(include=[data_type]).columns
     columns_to_select = ['EPRIME_CODE'] + list(numeric_columns)
 
+
     # Selecting all numeric columns along with "Subject"
+    df = df[df["clusters"] >= 0]
+
     filtered_df = df[columns_to_select]
+
+
     cols_to_drop = filtered_df.columns[filtered_df.isnull().sum() > na_number]
     filtered_df = filtered_df.drop(columns=cols_to_drop).copy()
+    filtered_df.drop("Age", axis=1, inplace=True)
 
-    return filtered_df.drop("Age", axis=1, inplace=True)
+    return filtered_df
 
 
 def create_metrics_cluster_df(df_cluster, df_scales):
@@ -84,17 +57,6 @@ def create_metrics_cluster_df(df_cluster, df_scales):
     return df_clusters
 
 
-def filter_data(df, data_type=np.number, na_number=60):
-    numeric_columns = df.select_dtypes(include=[data_type]).columns
-    columns_to_select = ['EPRIME_CODE'] + list(numeric_columns)
-
-    # Selecting all numeric columns along with "Subject"
-    filtered_df = df[columns_to_select]
-    cols_to_drop = filtered_df.columns[filtered_df.isnull().sum() >= na_number]
-    filtered_df = filtered_df.drop(columns=cols_to_drop).copy()
-    return filtered_df.drop("Age", axis=1)
-
-
 def create_mean_tasks(df, df_cluster):
     copy_data = df.copy()
     copy_data["clusters"] = df_cluster["clusters"]
@@ -125,62 +87,40 @@ def create_mean_tasks(df, df_cluster):
     return df_mean_scores
 
 
-def create_boxplots(df, df_cluster):
-    copy_data = df.copy()
-    copy_data["clusters"] = df_cluster["clusters"]
 
-    # Compute mean for each subject separately for 0 and 1
-    copy_data['Happy_No_Match'] = copy_data[
-        ['Happy_0_0', 'Happy_0_1', 'Happy_0_2', 'Happy_0_3', 'Happy_0_4', 'Happy_0_5']].mean(axis=1)
-    copy_data['Happy_Match'] = copy_data[
-        ['Happy_1_0', 'Happy_1_1', 'Happy_1_2', 'Happy_1_3', 'Happy_1_4', 'Happy_1_5', 'Happy_1_6', 'Happy_1_7',
-         'Happy_1_8']].mean(axis=1)
+def create_word(df, list_metrics, doc_name):
+    sns.set(style="whitegrid")
+    doc = Document()
+    size_clust = np.unique(df["clusters"], return_counts=True)[1]
 
-    copy_data['Sad_No_Match'] = copy_data[['Sad_0_0', 'Sad_0_1', 'Sad_0_2', 'Sad_0_3', 'Sad_0_4', 'Sad_0_5']].mean(
-        axis=1)
-    copy_data['Sad_Match'] = copy_data[
-        ['Sad_1_0', 'Sad_1_1', 'Sad_1_2', 'Sad_1_3', 'Sad_1_4', 'Sad_1_5', 'Sad_1_6', 'Sad_1_7', 'Sad_1_8']].mean(
-        axis=1)
+    for idx, group in enumerate(list_metrics):
+        # Add group name to the document
 
-    copy_data['Fear_No_Match'] = copy_data[
-        ['Fear_0_0', 'Fear_0_1', 'Fear_0_2', 'Fear_0_3', 'Fear_0_4', 'Fear_0_5']].mean(axis=1)
-    copy_data['Fear_Match'] = copy_data[
-        ['Fear_1_0', 'Fear_1_1', 'Fear_1_2', 'Fear_1_3', 'Fear_1_4', 'Fear_1_5', 'Fear_1_6', 'Fear_1_7',
-         'Fear_1_8']].mean(axis=1)
+        doc.add_paragraph(f"Group {idx + 1}: {', '.join(group)}")
 
-    # Melt the DataFrame to long format for each emotion
-    happy_df = pd.melt(copy_data, id_vars=['clusters'], value_vars=['Happy_No_Match', 'Happy_Match'],
-                       var_name='Happy', value_name='Mean_Score')
+        for i, variable in enumerate(group):
+            col_list = [variable, 'clusters']
+            variable_df = df[col_list]
+            melted_df = pd.melt(variable_df, id_vars=['clusters'], value_vars=variable,
+                                var_name='Variable', value_name='Mean_Score')
 
-    sad_df = pd.melt(copy_data, id_vars=['clusters'], value_vars=['Sad_No_Match', 'Sad_Match'],
-                     var_name='Sad', value_name='Mean_Score')
+            plot_filename = predictive_plots.create_boxplot(melted_df, variable, save_plot=True, index=[idx, i])
 
-    fear_df = pd.melt(copy_data, id_vars=['clusters'], value_vars=['Fear_No_Match', 'Fear_Match'],
-                      var_name='Fear', value_name='Mean_Score')
+            table_filename = predictive_plots.create_stats_table(melted_df, variable, size_clust, save_plot=True, index=[idx, i])
 
-    # Plot boxplots for each emotion separately
-    plt.figure(figsize=(18, 6))
+            # Add plot and table to the Word document in the same row
+            table_cell = doc.add_table(rows=1, cols=2)
+            table_row = table_cell.rows[0]
+            cell1 = table_row.cells[0]
+            cell2 = table_row.cells[1]
 
-    plt.subplot(1, 3, 1)
-    sns.boxplot(x='Happy', y='Mean_Score', hue='clusters', data=happy_df)
-    plt.title('Boxplot of Mean Happy Scores for Each Cluster')
-    plt.xlabel('Happy')
-    plt.ylabel('Mean Score')
-    plt.legend(title='Cluster')
+            cell1.paragraphs[0].add_run().add_picture(plot_filename, width=Inches(3))  # Adjust width as needed
+            cell2.paragraphs[0].add_run().add_picture(table_filename, width=Inches(3))  # Adjust width as
+    doc.save(doc_name)
 
-    plt.subplot(1, 3, 2)
-    sns.boxplot(x='Sad', y='Mean_Score', hue='clusters', data=sad_df)
-    plt.title('Boxplot of Mean Sad Scores for Each Cluster')
-    plt.xlabel('Sad')
-    plt.ylabel('Mean Score')
-    plt.legend(title='Cluster')
 
-    plt.subplot(1, 3, 3)
-    sns.boxplot(x='Fear', y='Mean_Score', hue='clusters', data=fear_df)
-    plt.title('Boxplot of Mean Fear Scores for Each Cluster')
-    plt.xlabel('Fear')
-    plt.ylabel('Mean Score')
-    plt.legend(title='Cluster')
+def export_clusters_df(df,output_name):
 
-    plt.tight_layout()
-    plt.show()
+    df.columns = ["EPRIME_CODE", "clusters"]
+    df = df.sort_values(by='EPRIME_CODE').reset_index(drop=True)
+    df.to_excel(output_name, index=False)
