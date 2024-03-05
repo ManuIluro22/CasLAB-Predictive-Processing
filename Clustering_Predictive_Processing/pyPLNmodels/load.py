@@ -19,7 +19,7 @@ def load_model(path_of_directory: str) -> Dict[str, Any]:
         A dictionary containing the loaded model.
     Examples
     --------
-    >>> from pyPLNmodels import PlnPCA, Pln, get_real_count_data, load_model
+    >>> from Clustering_Predictive_Processing.pyPLNmodels import PlnPCA, Pln, get_real_count_data, load_model
     >>> endog= get_real_count_data()
     >>> pca = PlnPCA(endog, add_const = True)
     >>> pca.fit()
@@ -99,7 +99,7 @@ def load_plnpcacollection(
 
     Examples
     --------
-    >>> from pyPLNmodels import PlnPCAcollection, get_real_count_data, load_plnpcacollection
+    >>> from Clustering_Predictive_Processing.pyPLNmodels import PlnPCAcollection, get_real_count_data, load_plnpcacollection
     >>> endog = get_real_count_data()
     >>> pcas = PlnPCAcollection(endog, add_const = True, ranks = [4,5,6])
     >>> pcas.fit()

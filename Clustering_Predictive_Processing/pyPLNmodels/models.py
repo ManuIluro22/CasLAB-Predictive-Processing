@@ -1413,14 +1413,14 @@ class Pln(_model):
 
     Examples
     --------
-    >>> from pyPLNmodels import Pln, get_real_count_data
+    >>> from Clustering_Predictive_Processing.pyPLNmodels import Pln, get_real_count_data
     >>> endog, labels = get_real_count_data(return_labels = True)
     >>> pln = Pln(endog,add_const = True)
     >>> pln.fit()
     >>> print(pln)
     >>> pln.viz(colors = labels)
 
-    >>> from pyPLNmodels import Pln, get_simulation_parameters, sample_pln
+    >>> from Clustering_Predictive_Processing.pyPLNmodels import Pln, get_simulation_parameters, sample_pln
     >>> param = get_simulation_parameters()
     >>> endog = sample_pln(param)
     >>> data = {"endog": endog}
@@ -1918,7 +1918,7 @@ class PlnPCAcollection:
 
     Examples
     --------
-    >>> from pyPLNmodels import PlnPCAcollection, get_real_count_data, get_simulation_parameters, sample_pln
+    >>> from Clustering_Predictive_Processing.pyPLNmodels import PlnPCAcollection, get_real_count_data, get_simulation_parameters, sample_pln
     >>> endog, labels = get_real_count_data(return_labels = True)
     >>> data = {"endog": endog}
     >>> plnpcas = PlnPCAcollection.from_formula("endog ~ 1", data = data, ranks = [5,8, 12])
@@ -2037,7 +2037,7 @@ class PlnPCAcollection:
             The created PlnPCAcollection instance.
         Examples
         --------
-        >>> from pyPLNmodels import PlnPCAcollection, get_real_count_data
+        >>> from Clustering_Predictive_Processing.pyPLNmodels import PlnPCAcollection, get_real_count_data
         >>> endog = get_real_count_data()
         >>> data = {"endog": endog}
         >>> pca_col = PlnPCAcollection.from_formula("endog ~ 1", data = data, ranks = [5,6])
@@ -2746,7 +2746,7 @@ class PlnPCA(_model):
 
     Examples
     --------
-    >>> from pyPLNmodels import PlnPCA, get_real_count_data, get_simulation_parameters, sample_pln
+    >>> from Clustering_Predictive_Processing.pyPLNmodels import PlnPCA, get_real_count_data, get_simulation_parameters, sample_pln
     >>> endog, labels = get_real_count_data(return_labels = True)
     >>> data = {"endog": endog}
     >>> pca = PlnPCA.from_formula("endog ~ 1", data = data, rank = 5)
@@ -3426,7 +3426,7 @@ class ZIPln(_model):
         :func:`pyPLNmodels.ZIPln.from_formula`
         Examples
         --------
-        >>> from pyPLNmodels import ZIPln, get_real_count_data
+        >>> from Clustering_Predictive_Processing.pyPLNmodels import ZIPln, get_real_count_data
         >>> endog= get_real_count_data()
         >>> zi = ZIPln(endog, add_const = True)
         >>> zi.fit()
@@ -3504,7 +3504,7 @@ class ZIPln(_model):
         :func:`pyPLNmodels.ZIPln.__init__`
         Examples
         --------
-        >>> from pyPLNmodels import ZIPln, get_real_count_data
+        >>> from Clustering_Predictive_Processing.pyPLNmodels import ZIPln, get_real_count_data
         >>> endog = get_real_count_data()
         >>> data = {"endog": endog}
         >>> zi = ZIPln.from_formula("endog ~ 1", data = data)
@@ -3648,7 +3648,7 @@ class ZIPln(_model):
             and zero inflated latent variables of size (n_samples, dim).
         Examples
         --------
-        >>> from pyPLNmodels import ZIPln, get_real_count_data
+        >>> from Clustering_Predictive_Processing.pyPLNmodels import ZIPln, get_real_count_data
         >>> endog, labels = get_real_count_data(return_labels = True)
         >>> zi = ZIPln(endog,add_const = True)
         >>> zi.fit()
