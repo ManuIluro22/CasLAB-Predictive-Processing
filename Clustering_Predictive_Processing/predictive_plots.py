@@ -3,6 +3,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
+def metrics_plot(cluster_range, scores,label,title):
+    # Plotting the silhouette scores
+    plt.figure(figsize=(10, 5))
+    plt.plot(cluster_range, scores, marker='o', linestyle='-', color='blue', label=label)
+    plt.title(title)
+    plt.xlabel('Nº')
+    plt.ylabel(label)
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(cluster_range)
+    plt.show()
+
 def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=None):
     """
     Creates a statistics table for a specified variable within a melted DataFrame.
@@ -162,5 +175,41 @@ def create_boxplot_emotions(df, df_cluster):
     plt.title('Boxplot of Mean Fear Scores for Each Cluster')
 
     plt.tight_layout()
+    plt.show()
+
+
+def plot_distributions(df, counts= False):
+    n_cols = 3  # Number of subplots per row
+    n_rows = int(np.ceil(len(df.columns) / n_cols)) - 1
+    # Set up the figure
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(18, 5 * n_rows))
+
+    # Iterate over each column and generate the corresponding histogram
+    for i, col in enumerate(df.drop("Subject", axis=1).columns):
+        try:
+            ax = axes[i // n_cols, i % n_cols]
+        except:
+            ax = axes[i]
+        if counts:
+            if col[12] == "1":
+                sns.histplot(df[col], bins=9, kde=True, ax=ax)
+            else:
+                sns.histplot(df[col], bins=6, kde=True, ax=ax)
+        else:
+            sns.histplot(df[col], kde=True, ax=ax)
+        ax.set_title(f'Distribution of {col}')
+
+    # Adjust layout and plot graph
+    plt.tight_layout()
+    plt.show()
+
+def plot_correlation(df):
+    correlation_matrix = df.drop("Subject",axis=1).corr()
+    plt.figure(figsize=(10, 8))
+    plt.imshow(correlation_matrix, cmap='coolwarm', interpolation='nearest')
+    plt.colorbar()
+    plt.title('Matriz de correlación')
+    plt.xticks(range(len(correlation_matrix.columns)), correlation_matrix.columns, rotation=90)
+    plt.yticks(range(len(correlation_matrix.columns)), correlation_matrix.columns)
     plt.show()
 

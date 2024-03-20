@@ -8,7 +8,34 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-def hierarchical_clustering_ts(list_df, metric, params, plotting=True):
+
+def clustering(df,algorithm, params,fit=False):
+    """
+    Creates a DataFrame with 'Subject ID' and cluster assignments obtained from the given clustering algorithm.
+
+    Parameters:
+    - df: Original DataFrame containing 'Subject ID'.
+    - algorithm: Function/algorithm that performs the clustering
+    - params: Parameters for forming flat clusters.
+
+    Returns:
+    - DataFrame with 'Subject ID' and corresponding cluster assignments.
+    """
+
+    # Form flat clusters from the hierarchical clustering
+    if fit:
+        clustering= algorithm(**params).fit(df)
+
+        return clustering.labels_
+    
+    else:
+        clusters_df = algorithm(**params)
+        df.reset_index(inplace=True)  # Reset index of the original DataFrame
+        df.loc[:, "clusters"] = clusters_df.copy()  # Assign cluster labels to 'clusters' column
+
+        return df[["Subject ID", "clusters"]].copy()  # Return DataFrame with 'Subject ID' and 'clusters'
+
+def hierarchical_clustering_ts_linkage(list_df, metric, params, plotting=True):
     """
     Performs hierarchical clustering on time series data and optionally plots the dendrogram.
 
@@ -52,26 +79,6 @@ def hierarchical_clustering_ts(list_df, metric, params, plotting=True):
     return Z
 
 
-def create_cluster_df(linkage, df, params):
-    """
-    Creates a DataFrame with 'Subject ID' and cluster assignments obtained from hierarchical clustering.
-
-    Parameters:
-    - linkage: Linkage matrix from hierarchical clustering.
-    - df: Original DataFrame containing 'Subject ID'.
-    - params: Parameters for forming flat clusters.
-
-    Returns:
-    - DataFrame with 'Subject ID' and corresponding cluster assignments.
-    """
-
-    # Form flat clusters from the hierarchical clustering
-    clusters_df = fcluster(linkage, **params)
-    df.reset_index(inplace=True)  # Reset index of the original DataFrame
-    df.loc[:, "clusters"] = clusters_df.copy()  # Assign cluster labels to 'clusters' column
-
-    return df[["Subject ID", "clusters"]].copy()  # Return DataFrame with 'Subject ID' and 'clusters'
-
 
 def length_cluster(df_cluster):
     """
@@ -92,3 +99,5 @@ def length_cluster(df_cluster):
     })
 
     return cluster_counts_df
+
+
