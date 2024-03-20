@@ -5,6 +5,21 @@ import seaborn as sns
 
 
 def metrics_plot(cluster_range, scores,label,title):
+    """
+    Plots a metric, such as silhouette scores, for a range of cluster numbers to visualize the
+    performance of clustering algorithms. This function is useful for determining the optimal
+    number of clusters by plotting a specified metric across different cluster counts.
+
+    Parameters:
+    - cluster_range: Iterable (list, array, etc.) containing the range of cluster numbers tested.
+                     These are used as the x-axis values of the plot.
+    - scores: Iterable (list, array, etc.) of numerical metric scores corresponding to each cluster
+              number in 'cluster_range'. These are used as the y-axis values of the plot.
+    - label: String representing the label for the metric being plotted. This label is used for
+             the y-axis and the plot's legend.
+    - title: String for the title of the plot. It provides a brief description of the plot's content.
+
+    """
     # Plotting the silhouette scores
     plt.figure(figsize=(10, 5))
     plt.plot(cluster_range, scores, marker='o', linestyle='-', color='blue', label=label)
@@ -61,7 +76,7 @@ def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=N
     table.scale(1, 1)
     table.auto_set_column_width([i for i in range(len(stats.columns))])
     plt.axis('off')
-    plt.title(f'Statistics for {variable}')
+    #plt.title(f'Statistics for {variable}')
 
     # Save or display the table based on the save_plot flag
     if save_plot:
@@ -179,6 +194,20 @@ def create_boxplot_emotions(df, df_cluster):
 
 
 def plot_distributions(df, counts= False):
+    """
+    Plots the distributions of columns in a DataFrame, excluding the "Subject" column, using histograms.
+    This function allows for an optional count-specific bin size adjustment for certain columns based on
+    their naming conventions. The distributions are visualized with both the histogram and the Kernel
+    Density Estimate (KDE) to provide a clear view of each variable's distribution.
+
+    Parameters:
+    - df: DataFrame from which distributions of columns will be plotted. Assumes the DataFrame
+          contains a column named "Subject" which will be excluded from the plotting.
+    - counts: Boolean (default=False). If True, adjusts the bin size for histograms based on a
+              specific condition related to the column names. Columns with a name satisfying
+              the condition (e.g., 13th character being "1") will use 9 bins, others will use 6 bins.
+
+    """
     n_cols = 3  # Number of subplots per row
     n_rows = int(np.ceil(len(df.columns) / n_cols)) - 1
     # Set up the figure
@@ -204,6 +233,17 @@ def plot_distributions(df, counts= False):
     plt.show()
 
 def plot_correlation(df):
+    """
+
+    Generates a heatmap visualization of the correlation matrix for the columns in a DataFrame,
+    excluding a specific column named "Subject". This function is useful for identifying and
+    visualizing the degree of linear relationship between pairs of variables in the DataFrame.
+
+    Parameters:
+    - df: DataFrame whose correlations between columns (excluding "Subject") are to be computed
+          and visualized.
+
+    """
     correlation_matrix = df.drop("Subject",axis=1).corr()
     plt.figure(figsize=(10, 8))
     plt.imshow(correlation_matrix, cmap='coolwarm', interpolation='nearest')
