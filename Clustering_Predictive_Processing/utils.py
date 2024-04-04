@@ -130,7 +130,7 @@ def create_mean_tasks(df, df_cluster):
 
 
 
-def create_word(df, list_metrics, doc_name):
+def create_word(df, list_metrics, doc_name, cluster_order = None):
     """
     Creates a Word document containing groups of metrics, with each group
     including boxplots and statistical tables for each variable. Plots and tables
@@ -155,7 +155,7 @@ def create_word(df, list_metrics, doc_name):
     # Loop through each group of metrics
     for idx, group in enumerate(list_metrics):
         # Add a paragraph for each group to the document
-        doc.add_paragraph(f"Group {idx + 1}: {', '.join(group)}")
+        doc.add_paragraph(f"Variables {idx + 1}: {', '.join(group)}")
 
         for i, variable in enumerate(group):
             # Prepare the data for plotting
@@ -165,9 +165,10 @@ def create_word(df, list_metrics, doc_name):
                                 var_name='Variable', value_name='Mean_Score')
 
             # Generate a boxplot and a statistics table, and save them as images
-            plot_filename = predictive_plots.create_boxplot(melted_df, variable, save_plot=True, index=[idx, i])
+            plot_filename = predictive_plots.create_boxplot(melted_df, variable, save_plot=True, index=[idx, i],
+                                                            cluster_order = cluster_order)
             table_filename = predictive_plots.create_stats_table(melted_df, variable, size_clust, save_plot=True,
-                                                                 index=[idx, i])
+                                                                 index=[idx, i], cluster_order = cluster_order)
 
             # Add the images to the Word document
             table_cell = doc.add_table(rows=1, cols=2)

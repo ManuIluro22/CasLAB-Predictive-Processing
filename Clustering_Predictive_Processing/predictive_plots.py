@@ -31,7 +31,7 @@ def metrics_plot(cluster_range, scores,label,title):
     plt.xticks(cluster_range)
     plt.show()
 
-def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=None):
+def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=None, cluster_order = None):
     """
     Creates a statistics table for a specified variable within a melted DataFrame.
     The table includes cluster size, mean, standard deviation, and standard error.
@@ -42,6 +42,7 @@ def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=N
     - size_clust: An array of cluster sizes.
     - save_plot: Boolean indicating whether to save the table as an image.
     - index: Tuple or list with two elements used to generate a unique filename.
+    - cluster_order: The order in which clusters should be displayed in the table.
 
     Returns:
     - Filename of the saved table image if save_plot is True. Otherwise, displays the table.
@@ -59,6 +60,11 @@ def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=N
     stats['SE of Cluster'] = (stats['std'] / np.sqrt(stats['size'])).round(2)
     # Replace size with actual cluster sizes
     stats['size'] = size_clust
+
+    # If cluster_order is specified, reorder the DataFrame according to it
+    if cluster_order is not None:
+        stats['clusters'] = pd.Categorical(stats['clusters'], categories=cluster_order, ordered=True)
+        stats.sort_values('clusters', inplace=True)
 
     # Rename columns for clarity
     stats.columns = ["Number of Cluster", "Size of Cluster", "Mean of Cluster", "Standard Deviation of Cluster",
@@ -87,7 +93,7 @@ def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=N
     else:
         plt.show()
 
-def create_boxplot(melted_df, variable, save_plot=False, index=None):
+def create_boxplot(melted_df, variable, save_plot=False, index=None, cluster_order = None):
     """
     Creates a boxplot for a specified variable within a melted DataFrame.
 
@@ -96,6 +102,8 @@ def create_boxplot(melted_df, variable, save_plot=False, index=None):
     - variable: The variable to plot in the boxplot.
     - save_plot: Boolean indicating whether to save the plot as an image.
     - index: Tuple or list with two elements used to generate a unique filename.
+    - cluster_order: The order in which clusters should be displayed and annotated.
+
 
     Returns:
     - Filename of the saved plot image if save_plot is True. Otherwise, displays the plot.
@@ -106,7 +114,7 @@ def create_boxplot(melted_df, variable, save_plot=False, index=None):
     ax = plt.gca()
 
     # Create the boxplot
-    sns.boxplot(x='clusters', y='Mean_Score', data=melted_df, ax=ax)
+    sns.boxplot(x='clusters', y='Mean_Score', data=melted_df, ax=ax,order = cluster_order)
     ax.set_title(f'Boxplot for {variable}')
     ax.set_xlabel('Clusters')
     ax.set_ylabel('Mean Score')
@@ -117,8 +125,17 @@ def create_boxplot(melted_df, variable, save_plot=False, index=None):
 
     # Calculate and annotate means for each cluster
     means = melted_df[melted_df['Variable'] == variable].groupby('clusters')['Mean_Score'].mean()
-    for cluster, mean in means.items():
-        cluster_position = list(means.keys()).index(cluster)
+
+    # Determine order of clusters for annotation
+    if cluster_order is not None:
+        order = cluster_order
+    else:
+        order = means.index
+
+    # Annotate means according to the specified or natural order
+    for cluster in order:
+        mean = means[cluster]
+        cluster_position = order.index(cluster)  # Get the position based on specified or natural order
         ax.text(cluster_position, mean, f'{mean:.2f}', ha='center', va='top', color='red')
 
     plt.tight_layout()
