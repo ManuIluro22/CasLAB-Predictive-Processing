@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from scipy.stats import ttest_ind, mannwhitneyu
 
 def metrics_plot(cluster_range, scores,label,title):
     """
@@ -31,7 +31,7 @@ def metrics_plot(cluster_range, scores,label,title):
     plt.xticks(cluster_range)
     plt.show()
 
-def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=None, cluster_order = None):
+def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=None,df_scales = None,cluster_order = None):
     """
     Creates a statistics table for a specified variable within a melted DataFrame.
     The table includes cluster size, mean, standard deviation, and standard error.
@@ -70,26 +70,38 @@ def create_stats_table(melted_df, variable, size_clust, save_plot=False, index=N
     stats.columns = ["Number of Cluster", "Size of Cluster", "Mean of Cluster", "Standard Deviation of Cluster",
                      "SE of Cluster"]
 
-    # Initialize figure for plotting
-    plt.figure(figsize=(8, 2))
-    # Create the table and adjust its properties
-    table = plt.table(cellText=stats.drop("Standard Deviation of Cluster", axis=1).values,
-                      colLabels=stats.drop("Standard Deviation of Cluster", axis=1).columns,
+    # Perform t-test for each cluster against df_scales[variable]
+    if df_scales is not None:
+        t_test_results = []
+        for cluster_num in stats["Number of Cluster"]:
+            cluster_data = melted_df[(melted_df['Variable'] == variable) & (melted_df['clusters'] == cluster_num)][
+                'Mean_Score']
+            scale_data = df_scales[variable]
+            t_stat, p_val = mannwhitneyu(cluster_data, scale_data)
+            t_test_results.append((round(t_stat, 2), round(p_val, 4)))  # Adjust rounding as needed
+
+        # Add t-test results to the stats DataFrame
+        stats["U-Statistic"], stats["P-Value"] = zip(*t_test_results)
+
+    # Create a table visualization
+    plt.figure(figsize=(10, 3))
+    table = plt.table(cellText=stats.values,
+                      colLabels=stats.columns,
                       cellLoc='center',
                       loc='center')
     table.auto_set_font_size(False)
     table.set_fontsize(10)
-    table.scale(1, 1)
-    table.auto_set_column_width([i for i in range(len(stats.columns))])
+    table.scale(1, 2)
+    table.auto_set_column_width(col=list(range(len(stats.columns))))
     plt.axis('off')
     #plt.title(f'Statistics for {variable}')
 
     # Save or display the table based on the save_plot flag
     if save_plot:
-        table_filename = f'table_{index[0]}_{index[1]}.png' if index else 'table.png'  # Provide fallback filename
-        plt.savefig(table_filename)
-        plt.close()
-        return table_filename
+        filename = f"stats_table_{index[0]}_{index[1]}.png"
+        plt.savefig(filename)
+        plt.close()  # Close the plot to prevent it from displaying in non-save cases
+        return filename
     else:
         plt.show()
 
@@ -133,13 +145,11 @@ def create_boxplot(melted_df, variable, save_plot=False, index=None, cluster_ord
         order = means.index
 
     # Annotate means according to the specified or natural order
-    for cluster in order:
+    for i,cluster in enumerate(order):
         mean = means[cluster]
-        cluster_position = order.index(cluster)  # Get the position based on specified or natural order
-        ax.text(cluster_position, mean, f'{mean:.2f}', ha='center', va='top', color='red')
+        ax.text(i, mean, f'{mean:.2f}', ha='center', va='top', color='red')
 
     plt.tight_layout()
-
     # Save or display the plot based on the save_plot flag
     if save_plot:
         plot_filename = f'plot_{index[0]}_{index[1]}.png' if index else 'plot.png'  # Provide fallback filename

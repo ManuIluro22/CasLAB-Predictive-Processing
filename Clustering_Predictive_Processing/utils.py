@@ -130,7 +130,7 @@ def create_mean_tasks(df, df_cluster):
 
 
 
-def create_word(df, list_metrics, doc_name, cluster_order = None):
+def create_word(df, list_metrics, doc_name,df_scales = None, cluster_order = None):
     """
     Creates a Word document containing groups of metrics, with each group
     including boxplots and statistical tables for each variable. Plots and tables
@@ -164,11 +164,18 @@ def create_word(df, list_metrics, doc_name, cluster_order = None):
             melted_df = pd.melt(variable_df, id_vars=['clusters'], value_vars=variable,
                                 var_name='Variable', value_name='Mean_Score')
 
+
+
             # Generate a boxplot and a statistics table, and save them as images
             plot_filename = predictive_plots.create_boxplot(melted_df, variable, save_plot=True, index=[idx, i],
                                                             cluster_order = cluster_order)
-            table_filename = predictive_plots.create_stats_table(melted_df, variable, size_clust, save_plot=True,
-                                                                 index=[idx, i], cluster_order = cluster_order)
+            if df_scales is not None:
+                table_filename = predictive_plots.create_stats_table(melted_df, variable, size_clust, save_plot=True,
+                                                                     index=[idx, i], df_scales=df_scales,cluster_order = cluster_order)
+            else:
+                table_filename = predictive_plots.create_stats_table(melted_df, variable, size_clust, save_plot=True,
+                                                                     index=[idx, i],cluster_order = cluster_order)
+
 
             # Add the images to the Word document
             table_cell = doc.add_table(rows=1, cols=2)
