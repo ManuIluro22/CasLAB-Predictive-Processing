@@ -210,3 +210,35 @@ def export_clusters_df(df,output_name):
     df = df.sort_values(by='EPRIME_CODE').reset_index(drop=True)
     # Export the DataFrame to an Excel file
     df.to_excel(output_name, index=False)
+
+
+def scales_means_per_cluster(scales, df_cluster, list_metrics):
+    """
+    Merges two DataFrames on 'Subject' and 'EPRIME_CODE', then calculates the mean
+    of specified metrics for each cluster. Returns a new DataFrame containing the mean values
+    of each metric for every original cluster.
+
+    Parameters:
+    - scales: DataFrame containing various metrics with 'EPRIME_CODE' as a key.
+    - df_cluster: DataFrame containing 'Subject' and cluster assignments.
+    - list_metrics: List of lists, where each sublist contains names of metrics whose means need to be calculated per cluster.
+
+    Returns:
+    - DataFrame with columns 'OriginalCluster', 'Metric', and 'Mean' showing the mean values of specified metrics per cluster.
+
+    Note: This function assumes the 'Subject' column in df_cluster aligns with 'EPRIME_CODE' in scales. It creates a merged DataFrame based on these columns to calculate means. The resulting DataFrame lists each cluster along with the mean values for the specified metrics.
+    """
+    new_data = pd.merge(scales.copy(), df_cluster.copy(), right_on='Subject', left_on='EPRIME_CODE')
+    original_means = []
+    for metrics in list_metrics:
+        for group in metrics:
+            scores_cluster = new_data[[group, "clusters"]]
+            means = scores_cluster.groupby("clusters").mean()
+
+            for index, row in means.iterrows():
+                original_means.append({
+                    'OriginalCluster': row.name,
+                    'Metric': group,
+                    'Mean': row.values[0]
+                })
+    return pd.DataFrame(original_means)

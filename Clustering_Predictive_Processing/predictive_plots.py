@@ -280,3 +280,74 @@ def plot_correlation(df):
     plt.yticks(range(len(correlation_matrix.columns)), correlation_matrix.columns)
     plt.show()
 
+
+def plot_3d_clusters(df_cluster):
+    """
+    Creates a 3D scatter plot to visualize clusters based on three dimensions specified in
+    the DataFrame columns 'col1', 'col2', and 'col3'. Each data point is colored according to
+    its cluster assignment stored in the 'clusters' column.
+
+    Parameters:
+    - df_cluster: DataFrame with at least three columns representing dimensions and a 'clusters'
+                  column for cluster assignments.
+
+    Note: This function modifies the column names for visualization purposes and assumes that the
+          DataFrame columns are appropriately labeled for 3D plotting. The function uses a 3D subplot
+          and adjusts colors based on cluster assignments, providing a legend to differentiate clusters.
+    """
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')  # Add a 3D subplot
+
+    # Color map
+    colors = plt.cm.tab10(df_cluster["clusters"])  # Adjust the colormap as needed, e.g., plt.cm.viridis
+
+    # Create a scatter plot
+    df_cluster.columns = ["col1", "col2", "col3", "clusters"]
+    scatter = ax.scatter(df_cluster['col1'], df_cluster['col2'], df_cluster['col3'], c=colors, s=50, alpha=0.6,
+                         edgecolors='w', linewidth=0.8)
+
+    # Legend with unique colors
+    legend = ax.legend(*scatter.legend_elements(), title="Clusters")
+    ax.add_artist(legend)
+
+    # Labels and title
+    ax.set_xlabel('Dimension 1')
+    ax.set_ylabel('Dimension 2')
+    ax.set_zlabel('Dimension 3')
+    ax.set_title('3D Scatter Plot of Data Points Colored by Cluster Label')
+
+    # Show plot
+    plt.show()
+
+def histogram_scales_clusters_bootsrap(means_list, list_clusters):
+    """
+    Generates histograms for the differences in means calculated during a bootstrap analysis for each cluster and metric.
+    This function visualizes the distribution of the mean differences from the original cluster for each specified metric
+    and helps in assessing the variation and stability of the bootstrap results.
+
+    Parameters:
+    - means_list: List containing dictionaries with entries for 'OriginalCluster', 'Metric', and 'Dif_Mean' representing
+                  the difference in means for each metric compared to the original cluster.
+    - list_clusters: List of clusters for which histograms will be generated.
+
+    Note: This function creates a histogram for each cluster and metric combination. It assumes that 'means_list' is a
+          list of dictionaries that can be converted into a DataFrame and that each entry contains valid data for plotting.
+    """
+
+    means_list_df = pd.DataFrame(means_list)
+    # Get unique clusters and metrics
+    metrics = means_list_df['Metric'].unique()
+
+    # Plot a histogram for each cluster and metric
+    for cluster in list_clusters:
+        for metric in metrics:
+            subset = means_list_df[
+                (means_list_df['OriginalCluster'] == cluster) & (means_list_df['Metric'] == metric)]
+            plt.figure(figsize=(10, 6))
+            plt.hist(subset['Dif_Mean'], bins=10, alpha=0.75)
+            plt.title(f'Histogram of Means for Cluster {cluster} and Metric {metric}')
+            plt.xlabel('Difference Mean From Original Cluster')
+            plt.ylabel('Frequency')
+            plt.grid(True)
+            plt.show()
