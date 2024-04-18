@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ttest_ind, mannwhitneyu
+import plotly.graph_objects as go
+
 
 def metrics_plot(cluster_range, scores,label,title):
     """
@@ -351,3 +353,49 @@ def histogram_scales_clusters_bootsrap(means_list, list_clusters):
             plt.ylabel('Frequency')
             plt.grid(True)
             plt.show()
+
+
+def interactive_3d_outliers(data, outliers):
+    # Visualization
+    # Create a Plotly figure
+    fig = go.Figure()
+
+    # Add normal data points
+    fig.add_trace(go.Scatter3d(
+        x=data['Mean_Rating0'],
+        y=data['Dif_Match'],
+        z=data['Cor_Pred_Like'],
+        mode='markers',
+        marker=dict(
+            size=5,
+            color='blue',  # normal points in blue
+        ),
+        name='Data Points'
+    ))
+
+    # Add detected outliers
+    fig.add_trace(go.Scatter3d(
+        x=data.loc[outliers, 'Mean_Rating0'],
+        y=data.loc[outliers, 'Dif_Match'],
+        z=data.loc[outliers, 'Cor_Pred_Like'],
+        mode='markers',
+        marker=dict(
+            size=8,
+            color='red',  # outliers in red
+            symbol='cross'
+        ),
+        name='Detected Outliers'
+    ))
+
+    # Update plot layout
+    fig.update_layout(
+        title='Outlier Detection with Local Outlier Factor',
+        scene=dict(
+            xaxis_title='Mean_Rating0',
+            yaxis_title='Dif_Match',
+            zaxis_title='Cor_Pred_Like'
+        ),
+        legend_title_text='Legend'
+    )
+
+    fig.show()

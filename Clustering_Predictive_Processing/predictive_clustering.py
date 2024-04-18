@@ -97,6 +97,11 @@ def length_cluster(df_cluster):
 
     return cluster_counts_df
 
+# Function to calculate Z-scores
+def calculate_z_scores(df, column):
+    mean = df[column].mean()
+    std = df[column].std()
+    df[column + '_Z-score'] = (df[column] - mean) / std
 
 
 # %%
