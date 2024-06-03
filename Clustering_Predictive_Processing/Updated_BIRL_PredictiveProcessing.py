@@ -4,10 +4,10 @@ import torch.optim as optim
 import pandas as pd
 import numpy as np
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from multiprocessing import Pool, cpu_count
 
 # Check if CUDA is available and set the device accordingly
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = 'cpu'#torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class DataLoader:
     def __init__(self, file_path):
@@ -36,6 +36,8 @@ class ParticipantOptimizer:
         self.Rmin = Rmin
         self.Rmax = Rmax
 
+        self.conv = 0
+
         self.list_rewards = None
         self.old_rewards = self.list_rewards
 
@@ -43,12 +45,13 @@ class ParticipantOptimizer:
         self.beta_match = None
 
     def calculate_rewards_individual(self, states, actions, rewards_matrix):
-        probabilities = torch.nn.functional.softmax(torch.tensor(rewards_matrix[states], device=device), dim=1)
+        rewards_tensor = torch.tensor(rewards_matrix, device=device)
+        probabilities = torch.nn.functional.softmax(rewards_tensor[states], dim=1)
         selected_probabilities = probabilities.gather(1, actions.unsqueeze(1)).squeeze(1)
         loss = -torch.sum(torch.log(selected_probabilities))
-        return loss, rewards_matrix
+        return loss, rewards_tensor
 
-    def find_initial_rewards(self, num_trials=50):
+    def find_initial_rewards(self, num_trials=100):
         best_loss = float('inf')
         best_rewards = None
 
@@ -71,17 +74,18 @@ class ParticipantOptimizer:
 
         self.list_rewards = torch.tensor(rewards_list, dtype=torch.float32)
 
-    def optimize(self, num_iterations=250, learning_rate=0.05):
+    def optimize(self, num_iterations=75, learning_rate=0.05):
 
 
         self.find_initial_rewards()
 
         for m in range(num_iterations):
+            print(m)
             beta_unconstrained_match = torch.tensor([-2.8], requires_grad=True, device=device)
             beta_unconstrained_no_match = torch.tensor([-2.8], requires_grad=True, device=device)
             optimizer = optim.Adam([beta_unconstrained_match, beta_unconstrained_no_match], lr=learning_rate)
             self._get_rewards_list()
-            for epoch in range(250):
+            for epoch in range(125):
                 optimizer.zero_grad()
                 beta_match = torch.sigmoid(beta_unconstrained_match)
                 beta_no_match = torch.sigmoid(beta_unconstrained_no_match)
@@ -91,6 +95,8 @@ class ParticipantOptimizer:
                 optimizer.step()
 
             self.RandomWalk(0.05,beta_match,beta_no_match,probability_data)
+            if (self.conv == 50):
+                break
 
         self.beta_match = beta_match
         self.beta_no_match = beta_no_match
@@ -104,7 +110,8 @@ class ParticipantOptimizer:
     def RandomWalk(self, distance, beta_match, beta_no_match, old_probability):
         better = False
         self.old_rewards = self.list_rewards
-        while(not better):
+        self.conv = 0
+        while(not better and self.conv < 50):
             new_rewards_matrix = self.perturb_rewards(distance)
             self._get_rewards_list(new_rewards_matrix)
 
@@ -131,7 +138,6 @@ class ParticipantOptimizer:
                     beta = beta_match
                 new_Q_value = beta * (Q_updated[state, action].clone() - reward) + Q_updated[state, action].clone()
                 Q_updated[state, action] = new_Q_value
-
             if new_probability_data / old_probability < 1:
                 prob = new_probability_data / old_probability / 2
             else:
@@ -140,6 +146,9 @@ class ParticipantOptimizer:
             if np.random.random() < min(1, prob):
                 better = True
                 self.best_rewards = new_rewards_matrix
+            self.conv += 1
+
+
 
     def simulate(self, beta_match, beta_no_match):
 
@@ -183,18 +192,13 @@ if __name__ == '__main__':
     results = pd.DataFrame(index=participants, columns=['best_rewards', 'beta_match', 'beta_no_match'])
     total_start_time = time.time()
 
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for participant in participants:
-            states = states_dataset.loc[participant]
-            actions = actions_dataset.loc[participant]
-            futures.append(executor.submit(optimize_participant, participant, states, actions, n_states, n_actions))
-
-        for future in as_completed(futures):
-            participant_index, best_rewards, beta_match, beta_no_match = future.result()
-            results.at[participant_index, 'best_rewards'] = best_rewards
-            results.at[participant_index, 'beta_match'] = beta_match
-            results.at[participant_index, 'beta_no_match'] = beta_no_match
+    for participant in participants:
+        states = states_dataset.loc[participant]
+        actions = actions_dataset.loc[participant]
+        participant_index, best_rewards, beta_match, beta_no_match, _ = optimize_participant(participant, states, actions, n_states, n_actions)
+        results.at[participant_index, 'best_rewards'] = best_rewards
+        results.at[participant_index, 'beta_match'] = beta_match
+        results.at[participant_index, 'beta_no_match'] = beta_no_match
 
     total_end_time = time.time()
     total_execution_time = total_end_time - total_start_time
@@ -205,3 +209,7 @@ if __name__ == '__main__':
     results.to_csv('optimization_results.csv')
     results.to_excel('optimization_results.xlsx', index=True)
     print("Results saved to CSV and Excel.")
+
+
+
+
