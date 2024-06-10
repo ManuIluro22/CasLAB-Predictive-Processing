@@ -74,13 +74,12 @@ class ParticipantOptimizer:
 
         self.list_rewards = torch.tensor(rewards_list, dtype=torch.float32)
 
-    def optimize(self, num_iterations=75, learning_rate=0.05):
+    def optimize(self, num_iterations=100, learning_rate=0.05):
 
 
         self.find_initial_rewards()
 
         for m in range(num_iterations):
-            print(m)
             beta_unconstrained_match = torch.tensor([-2.8], requires_grad=True, device=device)
             beta_unconstrained_no_match = torch.tensor([-2.8], requires_grad=True, device=device)
             optimizer = optim.Adam([beta_unconstrained_match, beta_unconstrained_no_match], lr=learning_rate)
