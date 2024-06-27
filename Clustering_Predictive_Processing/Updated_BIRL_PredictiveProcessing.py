@@ -128,7 +128,7 @@ class ParticipantOptimizer:
                 probabilities = torch.nn.functional.softmax(Q_updated, dim=1)  # Assuming Q_updated is indexed appropriately
                 selected_probability = probabilities[state].gather(0, action)
                 new_probability_data *= selected_probability
-                new_loss -= torch.log(selected_probability)
+                new_loss -= selected_probability*torch.log(selected_probability)
 
                 ## Maybe different beta for sequence s0->s0, s0->s1, s1->s0, s1->s1
                 if (self.states[i - 1] == 0):
@@ -162,7 +162,7 @@ class ParticipantOptimizer:
             probabilities = torch.nn.functional.softmax(Q_updated, dim=1)
             selected_probability = probabilities[state].gather(0, action)
             probability_data *= selected_probability
-            loss -= torch.log(selected_probability)
+            loss -= selected_probability*torch.log(selected_probability)
             beta = beta_no_match if self.states[i-1] == 0 else beta_match
             new_Q_value = beta * (Q_updated[state, action].clone() - reward) + Q_updated[state, action].clone()
             Q_updated[state, action] = new_Q_value
